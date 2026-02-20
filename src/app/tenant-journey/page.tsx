@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import TenantDetailsForm from './components/TenantDetailsForm';
 import DocumentUpload from './components/DocumentUpload';
 import WelcomeScreen from './components/WelcomeScreen';
 
-export default function TenantJourneyPage() {
+function TenantJourneyContent() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [tenantData, setTenantData] = useState<any>(null);
@@ -62,5 +62,13 @@ export default function TenantJourneyPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TenantJourneyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><p>Loading...</p></div>}>
+      <TenantJourneyContent />
+    </Suspense>
   );
 }
