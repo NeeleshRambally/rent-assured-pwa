@@ -22,7 +22,7 @@ In Railway dashboard:
 2. Click "Variables" tab
 3. Add:
    ```
-   NEXT_PUBLIC_API_URL=https://your-api-url.railway.app/api
+   NEXT_PUBLIC_API_URL=https://rentassured-api-production.up.railway.app/api
    ```
 
 ### 4. **Deploy**
@@ -54,7 +54,7 @@ railway link
 
 ### 5. **Add Environment Variables**
 ```bash
-railway variables set NEXT_PUBLIC_API_URL=https://your-api-url.railway.app/api
+railway variables set NEXT_PUBLIC_API_URL=https://rentassured-api-production.up.railway.app/api
 ```
 
 ### 6. **Deploy**
@@ -73,9 +73,9 @@ railway up
 
 ## Post-Deployment
 
-1. **Get your URL**: Railway will provide a URL like `https://rent-assured-pwa.up.railway.app`
-2. **Test the journey**: Visit `https://your-url.railway.app/tenant-journey?requesterName=TestRequester`
-3. **Update API URL**: Make sure your API is also deployed and update `NEXT_PUBLIC_API_URL`
+1. **Get your URL**: Railway will provide a URL like `https://rent-assured-pwa-production.up.railway.app`
+2. **Test the journey**: Visit `https://rent-assured-pwa-production.up.railway.app/tenant-journey?landlordName=Test%20Landlord&vettingRef=VET-20260220-B50A3&tenantId=9402085329086`
+3. **Verify API connection**: Make sure `NEXT_PUBLIC_API_URL` is set to `https://rentassured-api-production.up.railway.app/api`
 
 ---
 
