@@ -21,7 +21,7 @@ function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
 export default function WelcomeScreen({ requesterName, onContinue, vettingRef }: WelcomeScreenProps & { vettingRef: string | null }) {
   const [loading, setLoading] = useState(true);
   const [vettingDetails, setVettingDetails] = useState<VettingRequestDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     async function checkVettingStatus() {
@@ -33,9 +33,12 @@ export default function WelcomeScreen({ requesterName, onContinue, vettingRef }:
       try {
         const details = await getVettingRequestByReference(vettingRef);
         setVettingDetails(details);
-      } catch (err) {
-        setError('Failed to load vetting request details');
+      } catch (err: any) {
         console.error('Error fetching vetting details:', err);
+        // Check if it's a 404 error
+        if (err.message && (err.message.includes('404') || err.message.includes('not found') || err.message.includes('Not Found'))) {
+          setNotFound(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -49,6 +52,49 @@ export default function WelcomeScreen({ requesterName, onContinue, vettingRef }:
       <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
         <div className="text-6xl mb-6">⏳</div>
         <p className="text-lg text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show error message if vetting request not found (404)
+  if (notFound) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
+        <VettingRefBanner vettingRef={vettingRef} />
+        <div className="mb-8">
+          <div className="text-6xl mb-6">❌</div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Vetting Request Not Found
+          </h1>
+          <p className="text-lg text-gray-700 mb-3">
+            We can't seem to find your vetting request.
+          </p>
+          <p className="text-gray-600 mb-6">
+            Please check the link you received or contact support.
+          </p>
+        </div>
+
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">What to do next?</h2>
+          <p className="text-sm text-gray-700 mb-4">
+            This could happen if:
+          </p>
+          <ul className="text-sm text-gray-700 text-left space-y-2 mb-4">
+            <li>• The link is incorrect or incomplete</li>
+            <li>• The vetting request was cancelled</li>
+            <li>• The link has expired</li>
+          </ul>
+          <p className="text-sm text-gray-700">
+            Please contact your landlord for a new link.
+          </p>
+        </div>
+
+        <button
+          onClick={() => window.location.href = '/'}
+          className="bg-gray-600 text-white py-3 px-8 rounded-md hover:bg-gray-700 transition-colors font-medium"
+        >
+          Return to Home
+        </button>
       </div>
     );
   }
@@ -77,10 +123,10 @@ export default function WelcomeScreen({ requesterName, onContinue, vettingRef }:
             If you believe this is an error or need to update your information, please contact your landlord:
           </p>
           <div className="bg-white border border-amber-300 rounded-lg p-4">
-            <p className="font-medium text-gray-900">{vettingDetails.landlordName}</p>
+            <p className="font-medium text-gray-900 text-lg mb-2">{vettingDetails.landlordName}</p>
             <a
               href={`mailto:${vettingDetails.landlordEmail}`}
-              className="text-blue-600 hover:text-blue-800 underline"
+              className="text-blue-600 hover:text-blue-800 underline text-base"
             >
               {vettingDetails.landlordEmail}
             </a>

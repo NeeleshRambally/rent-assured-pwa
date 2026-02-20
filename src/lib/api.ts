@@ -103,6 +103,9 @@ export async function getVettingRequestByReference(
   );
 
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Vetting request not found (404)');
+    }
     const error = await response.text();
     throw new Error(error || 'Failed to fetch vetting request details');
   }
