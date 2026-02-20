@@ -5,7 +5,7 @@ interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
-function VettingRefBanner({ vettingRef }: { vettingRef: string | null }) {
+function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
   if (!vettingRef) return null;
 
   return (
