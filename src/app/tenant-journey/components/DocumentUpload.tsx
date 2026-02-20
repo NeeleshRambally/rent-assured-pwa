@@ -185,14 +185,26 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-      <VettingRefBanner vettingRef={vettingRef} />
-      <h1 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">Upload Documents</h1>
-      <p className="text-gray-600 mb-6">
-        Please upload the required documents to complete your application.
-      </p>
+    <div className="relative">
+      {/* Loading Overlay */}
+      {uploading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Submitting Your Application</h2>
+            <p className="text-gray-600">Please wait while we process your documents...</p>
+          </div>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+        <VettingRefBanner vettingRef={vettingRef} />
+        <h1 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">Upload Documents</h1>
+        <p className="text-gray-600 mb-6">
+          Please upload the required documents to complete your application.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* Document Upload Sections */}
         {documentTypes.map((docType) => (
           <div key={docType.value} className="border border-gray-200 rounded-lg p-4">
@@ -286,6 +298,7 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
           </div>
         )}
       </form>
+      </div>
     </div>
   );
 }
