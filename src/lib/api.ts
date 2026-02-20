@@ -61,7 +61,7 @@ export async function updateVettingRequestStatus(
   status: string
 ) {
   const response = await fetch(
-    `${API_BASE_URL}/vetting-requests/reference/${encodeURIComponent(vettingRef)}/status`,
+    `${API_BASE_URL}/vetting/reference/${encodeURIComponent(vettingRef)}/status`,
     {
       method: 'PATCH',
       headers: {
@@ -93,7 +93,7 @@ export async function getVettingRequestByReference(
   vettingRef: string
 ): Promise<VettingRequestDetails> {
   const response = await fetch(
-    `${API_BASE_URL}/vetting-requests/reference/${encodeURIComponent(vettingRef)}`,
+    `${API_BASE_URL}/vetting/reference/${encodeURIComponent(vettingRef)}`,
     {
       method: 'GET',
       headers: {
