@@ -5,11 +5,23 @@ import { useState } from 'react';
 interface TenantDetailsFormProps {
   onComplete: (data: any) => void;
   initialData?: any;
+  tenantId?: string | null;
+  vettingRef?: string | null;
 }
 
-export default function TenantDetailsForm({ onComplete, initialData }: TenantDetailsFormProps) {
+function VettingRefBanner({ vettingRef }: { vettingRef: string | null }) {
+  if (!vettingRef) return null;
+
+  return (
+    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-6 text-center">
+      <span className="text-sm font-medium">Vetting Reference: {vettingRef}</span>
+    </div>
+  );
+}
+
+export default function TenantDetailsForm({ onComplete, initialData, tenantId, vettingRef }: TenantDetailsFormProps) {
   const [formData, setFormData] = useState({
-    idNumber: initialData?.idNumber || '',
+    idNumber: tenantId || initialData?.idNumber || '',
     name: initialData?.name || '',
     surname: initialData?.surname || '',
     email: initialData?.email || '',
@@ -53,6 +65,7 @@ export default function TenantDetailsForm({ onComplete, initialData }: TenantDet
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+      <VettingRefBanner vettingRef={vettingRef} />
       <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">Tenant Details</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -10,11 +10,17 @@ function TenantJourneyContent() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [tenantData, setTenantData] = useState<any>(null);
-  const [requesterName, setRequesterName] = useState<string | null>(null);
+  const [landlordName, setLandlordName] = useState<string | null>(null);
+  const [vettingRef, setVettingRef] = useState<string | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   useEffect(() => {
-    const name = searchParams.get('requesterName');
-    setRequesterName(name);
+    const name = searchParams.get('landlordName');
+    const ref = searchParams.get('vettingRef');
+    const id = searchParams.get('tenantId');
+    setLandlordName(name);
+    setVettingRef(ref);
+    setTenantId(id);
   }, [searchParams]);
 
   const handleWelcomeContinue = () => {
@@ -52,13 +58,13 @@ function TenantJourneyContent() {
 
         {/* Step content */}
         {currentStep === 0 && (
-          <WelcomeScreen requesterName={requesterName} onContinue={handleWelcomeContinue} />
+          <WelcomeScreen requesterName={landlordName} onContinue={handleWelcomeContinue} vettingRef={vettingRef} />
         )}
         {currentStep === 1 && (
-          <TenantDetailsForm onComplete={handleDetailsComplete} initialData={tenantData} />
+          <TenantDetailsForm onComplete={handleDetailsComplete} initialData={tenantData} tenantId={tenantId} vettingRef={vettingRef} />
         )}
         {currentStep === 2 && (
-          <DocumentUpload tenantData={tenantData} onBack={handleBack} />
+          <DocumentUpload tenantData={tenantData} onBack={handleBack} vettingRef={vettingRef} />
         )}
       </div>
     </div>

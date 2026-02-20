@@ -5,9 +5,20 @@ interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
-export default function WelcomeScreen({ requesterName, onContinue }: WelcomeScreenProps) {
+function VettingRefBanner({ vettingRef }: { vettingRef: string | null }) {
+  if (!vettingRef) return null;
+
+  return (
+    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-6 text-center">
+      <span className="text-sm font-medium">Vetting Reference: {vettingRef}</span>
+    </div>
+  );
+}
+
+export default function WelcomeScreen({ requesterName, onContinue, vettingRef }: WelcomeScreenProps & { vettingRef: string | null }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
+      <VettingRefBanner vettingRef={vettingRef} />
       <div className="mb-8">
         <div className="text-6xl mb-6">👋</div>
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -16,7 +27,7 @@ export default function WelcomeScreen({ requesterName, onContinue }: WelcomeScre
         {requesterName ? (
           <>
             <p className="text-lg md:text-xl text-gray-700 mb-3">
-              You have been requested by <span className="font-semibold text-blue-600">{requesterName}</span> to be submitted for vetting.
+              <span className="font-semibold text-blue-600">{requesterName}</span> has requested you to be submitted for vetting.
             </p>
             <p className="text-gray-600">
               Please complete the next steps to start your journey with us! 🏠

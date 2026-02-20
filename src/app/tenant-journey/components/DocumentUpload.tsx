@@ -6,6 +6,17 @@ import { createTenant, uploadDocument, DocumentType } from '@/lib/api';
 interface DocumentUploadProps {
   tenantData: any;
   onBack: () => void;
+  vettingRef?: string | null;
+}
+
+function VettingRefBanner({ vettingRef }: { vettingRef: string | null }) {
+  if (!vettingRef) return null;
+
+  return (
+    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-6 text-center">
+      <span className="text-sm font-medium">Vetting Reference: {vettingRef}</span>
+    </div>
+  );
 }
 
 interface UploadedDocument {
@@ -15,7 +26,7 @@ interface UploadedDocument {
   preview?: string;
 }
 
-export default function DocumentUpload({ tenantData, onBack }: DocumentUploadProps) {
+export default function DocumentUpload({ tenantData, onBack, vettingRef }: DocumentUploadProps) {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -165,6 +176,7 @@ export default function DocumentUpload({ tenantData, onBack }: DocumentUploadPro
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+      <VettingRefBanner vettingRef={vettingRef} />
       <h1 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">Upload Documents</h1>
       <p className="text-gray-600 mb-6">
         Please upload the required documents to complete your application.
