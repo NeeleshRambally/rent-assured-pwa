@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createTenant, uploadDocument, updateVettingRequestStatus, DocumentType } from '@/lib/api';
+import { createTenant, uploadDocument, submitVettingRequest, DocumentType } from '@/lib/api';
 
 interface DocumentUploadProps {
   tenantData: any;
@@ -107,12 +107,12 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
 
       await Promise.all(uploadPromises);
 
-      // Step 3: Update vetting request status to completed
+      // Step 3: Submit vetting request (marks as completed)
       if (vettingRef) {
         try {
-          await updateVettingRequestStatus(vettingRef, 'Completed');
+          await submitVettingRequest(vettingRef);
         } catch (statusError) {
-          console.error('Failed to update vetting request status:', statusError);
+          console.error('Failed to submit vetting request:', statusError);
           // Don't fail the whole submission if status update fails
         }
       }

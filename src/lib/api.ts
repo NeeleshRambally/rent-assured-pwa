@@ -56,24 +56,22 @@ export async function uploadDocument(
   return response.json();
 }
 
-export async function updateVettingRequestStatus(
-  vettingRef: string,
-  status: string
+export async function submitVettingRequest(
+  vettingRef: string
 ) {
   const response = await fetch(
-    `${API_BASE_URL}/vetting/reference/${encodeURIComponent(vettingRef)}/status`,
+    `${API_BASE_URL}/vetting/reference/${encodeURIComponent(vettingRef)}/submit`,
     {
-      method: 'PATCH',
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'accept': '*/*',
       },
-      body: JSON.stringify({ status }),
     }
   );
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(error || 'Failed to update vetting request status');
+    throw new Error(error || 'Failed to submit vetting request');
   }
 
   return response.json();
