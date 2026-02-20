@@ -78,3 +78,34 @@ export async function updateVettingRequestStatus(
 
   return response.json();
 }
+
+export interface VettingRequestDetails {
+  uniqueReference: string;
+  status: string;
+  landlordName: string;
+  landlordEmail: string;
+  tenantIdNumber: string;
+  createdAt: string;
+  // Add other fields as needed
+}
+
+export async function getVettingRequestByReference(
+  vettingRef: string
+): Promise<VettingRequestDetails> {
+  const response = await fetch(
+    `${API_BASE_URL}/vetting-requests/reference/${encodeURIComponent(vettingRef)}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to fetch vetting request details');
+  }
+
+  return response.json();
+}

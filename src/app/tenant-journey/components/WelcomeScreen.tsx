@@ -1,5 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { getVettingRequestByReference, VettingRequestDetails } from '@/lib/api';
+
 interface WelcomeScreenProps {
   requesterName: string | null;
   onContinue: () => void;
@@ -16,6 +19,84 @@ function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
 }
 
 export default function WelcomeScreen({ requesterName, onContinue, vettingRef }: WelcomeScreenProps & { vettingRef: string | null }) {
+  const [loading, setLoading] = useState(true);
+  const [vettingDetails, setVettingDetails] = useState<VettingRequestDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkVettingStatus() {
+      if (!vettingRef) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const details = await getVettingRequestByReference(vettingRef);
+        setVettingDetails(details);
+      } catch (err) {
+        setError('Failed to load vetting request details');
+        console.error('Error fetching vetting details:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkVettingStatus();
+  }, [vettingRef]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
+        <div className="text-6xl mb-6">⏳</div>
+        <p className="text-lg text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show already submitted message if status is not Pending
+  if (vettingDetails && vettingDetails.status !== 'Pending') {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
+        <VettingRefBanner vettingRef={vettingRef} />
+        <div className="mb-8">
+          <div className="text-6xl mb-6">✅</div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Already Submitted
+          </h1>
+          <p className="text-lg text-gray-700 mb-3">
+            Your vetting request has already been submitted.
+          </p>
+          <p className="text-gray-600 mb-6">
+            Current status: <span className="font-semibold text-blue-600">{vettingDetails.status}</span>
+          </p>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Need Help?</h2>
+          <p className="text-sm text-gray-700 mb-4">
+            If you believe this is an error or need to update your information, please contact your landlord:
+          </p>
+          <div className="bg-white border border-amber-300 rounded-lg p-4">
+            <p className="font-medium text-gray-900">{vettingDetails.landlordName}</p>
+            <a
+              href={`mailto:${vettingDetails.landlordEmail}`}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              {vettingDetails.landlordEmail}
+            </a>
+          </div>
+        </div>
+
+        <button
+          onClick={() => window.location.href = '/'}
+          className="bg-gray-600 text-white py-3 px-8 rounded-md hover:bg-gray-700 transition-colors font-medium"
+        >
+          Return to Home
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
       <VettingRefBanner vettingRef={vettingRef} />
