@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { getVettingRequestByReference, VettingRequestDetails } from '@/lib/api';
 import TenantDetailsForm from './components/TenantDetailsForm';
 import DocumentUpload from './components/DocumentUpload';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -13,6 +14,9 @@ function TenantJourneyContent() {
   const [landlordName, setLandlordName] = useState<string | null>(null);
   const [vettingRef, setVettingRef] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [vettingDetails, setVettingDetails] = useState<VettingRequestDetails | null>(null);
+  const [vettingCheckComplete, setVettingCheckComplete] = useState(false);
+  const [vettingNotFound, setVettingNotFound] = useState(false);
 
   useEffect(() => {
     const name = searchParams.get('landlordName');
@@ -22,6 +26,31 @@ function TenantJourneyContent() {
     setVettingRef(ref);
     setTenantId(id);
   }, [searchParams]);
+
+  useEffect(() => {
+    async function checkVettingStatus() {
+      if (!vettingRef) {
+        setVettingCheckComplete(true);
+        return;
+      }
+
+      try {
+        const details = await getVettingRequestByReference(vettingRef);
+        setVettingDetails(details);
+      } catch (err: any) {
+        console.error('Error fetching vetting details:', err);
+        if (err.message && (err.message.includes('404') || err.message.includes('not found') || err.message.includes('Not Found'))) {
+          setVettingNotFound(true);
+        }
+      } finally {
+        setVettingCheckComplete(true);
+      }
+    }
+
+    if (vettingRef) {
+      checkVettingStatus();
+    }
+  }, [vettingRef]);
 
   const handleWelcomeContinue = () => {
     setCurrentStep(1);
@@ -58,7 +87,14 @@ function TenantJourneyContent() {
 
         {/* Step content */}
         {currentStep === 0 && (
-          <WelcomeScreen requesterName={landlordName} onContinue={handleWelcomeContinue} vettingRef={vettingRef} />
+          <WelcomeScreen
+            requesterName={landlordName}
+            onContinue={handleWelcomeContinue}
+            vettingRef={vettingRef}
+            vettingDetails={vettingDetails}
+            vettingCheckComplete={vettingCheckComplete}
+            vettingNotFound={vettingNotFound}
+          />
         )}
         {currentStep === 1 && (
           <TenantDetailsForm onComplete={handleDetailsComplete} initialData={tenantData} tenantId={tenantId} vettingRef={vettingRef} />

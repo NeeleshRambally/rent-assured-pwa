@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getVettingRequestByReference, VettingRequestDetails } from '@/lib/api';
+import { VettingRequestDetails } from '@/lib/api';
 
 interface WelcomeScreenProps {
   requesterName: string | null;
   onContinue: () => void;
+  vettingRef: string | null;
+  vettingDetails: VettingRequestDetails | null;
+  vettingCheckComplete: boolean;
+  vettingNotFound: boolean;
 }
 
 function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
@@ -18,36 +21,16 @@ function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
   );
 }
 
-export default function WelcomeScreen({ requesterName, onContinue, vettingRef }: WelcomeScreenProps & { vettingRef: string | null }) {
-  const [loading, setLoading] = useState(true);
-  const [vettingDetails, setVettingDetails] = useState<VettingRequestDetails | null>(null);
-  const [notFound, setNotFound] = useState(false);
+export default function WelcomeScreen({
+  requesterName,
+  onContinue,
+  vettingRef,
+  vettingDetails,
+  vettingCheckComplete,
+  vettingNotFound
+}: WelcomeScreenProps) {
 
-  useEffect(() => {
-    async function checkVettingStatus() {
-      if (!vettingRef) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const details = await getVettingRequestByReference(vettingRef);
-        setVettingDetails(details);
-      } catch (err: any) {
-        console.error('Error fetching vetting details:', err);
-        // Check if it's a 404 error
-        if (err.message && (err.message.includes('404') || err.message.includes('not found') || err.message.includes('Not Found'))) {
-          setNotFound(true);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    checkVettingStatus();
-  }, [vettingRef]);
-
-  if (loading) {
+  if (!vettingCheckComplete) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
         <div className="text-6xl mb-6">⏳</div>
@@ -57,7 +40,7 @@ export default function WelcomeScreen({ requesterName, onContinue, vettingRef }:
   }
 
   // Show error message if vetting request not found (404)
-  if (notFound) {
+  if (vettingNotFound) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 md:p-10 text-center">
         <VettingRefBanner vettingRef={vettingRef} />
