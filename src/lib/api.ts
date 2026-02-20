@@ -55,3 +55,26 @@ export async function uploadDocument(
 
   return response.json();
 }
+
+export async function updateVettingRequestStatus(
+  vettingRef: string,
+  status: string
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/vetting-requests/reference/${encodeURIComponent(vettingRef)}/status`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to update vetting request status');
+  }
+
+  return response.json();
+}
