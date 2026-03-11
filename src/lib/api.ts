@@ -6,6 +6,7 @@ export interface TenantDto {
   lastName: string;
   email: string;
   contactNumber: string;
+  dateOfBirth?: string;
   occupation?: OccupationType;
   employer?: string;
 }

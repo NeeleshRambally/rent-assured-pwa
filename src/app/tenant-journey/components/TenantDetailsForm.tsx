@@ -27,17 +27,49 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
     lastName: initialData?.lastName || '',
     email: initialData?.email || '',
     contactNumber: initialData?.contactNumber || '',
+    dateOfBirth: initialData?.dateOfBirth || '',
     occupation: (initialData?.occupation as OccupationType) || '' as OccupationType | '',
     employer: initialData?.employer || '',
   });
+  const [dobAutoFilled, setDobAutoFilled] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  /** Extract date of birth from a 13-digit SA ID (first 6 digits = YYMMDD). */
+  const extractDobFromSaId = (id: string): string | null => {
+    if (id.length !== 13 || !/^\d{13}$/.test(id)) return null;
+    const yy = parseInt(id.substring(0, 2), 10);
+    const mm = id.substring(2, 4);
+    const dd = id.substring(4, 6);
+    const currentTwoDigitYear = new Date().getFullYear() % 100;
+    const fullYear = yy <= currentTwoDigitYear ? 2000 + yy : 1900 + yy;
+    // Validate the date
+    const date = new Date(`${fullYear}-${mm}-${dd}T00:00:00`);
+    if (isNaN(date.getTime())) return null;
+    return `${fullYear}-${mm}-${dd}`;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Auto-fill date of birth from SA ID number
+    if (name === 'idNumber') {
+      const dob = extractDobFromSaId(value);
+      if (dob) {
+        setFormData(prev => ({ ...prev, [name]: value, dateOfBirth: dob }));
+        setDobAutoFilled(true);
+      } else {
+        setDobAutoFilled(false);
+      }
+    }
+
+    // If user manually edits DOB, clear the auto-fill flag
+    if (name === 'dateOfBirth') {
+      setDobAutoFilled(false);
     }
   };
 
@@ -53,6 +85,7 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
       newErrors.email = 'Email is invalid';
     }
     if (!formData.contactNumber.trim()) newErrors.contactNumber = 'Cell number is required';
+    if (!formData.dateOfBirth.trim()) newErrors.dateOfBirth = 'Date of birth is required';
     if (!formData.occupation) newErrors.occupation = 'Please select your employment status';
     if (formData.occupation === 'Employed' && !formData.employer.trim()) {
       newErrors.employer = 'Employer name is required';
@@ -71,6 +104,7 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
         lastName: formData.lastName,
         email: formData.email,
         contactNumber: formData.contactNumber,
+        dateOfBirth: formData.dateOfBirth,
         occupation: formData.occupation,
       };
 
@@ -144,6 +178,27 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
                 />
                 {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
+                Date of Birth *
+              </label>
+              <input
+                type="date"
+                id="dateOfBirth"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                max={new Date().toISOString().split('T')[0]}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {dobAutoFilled && (
+                <p className="text-green-600 text-xs mt-1">Auto-filled from ID number</p>
+              )}
+              {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>}
             </div>
           </div>
         </div>
