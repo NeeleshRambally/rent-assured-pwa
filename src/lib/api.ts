@@ -1,16 +1,22 @@
+export type OccupationType = 'Employed' | 'SelfEmployed' | 'Unemployed';
+
 export interface TenantDto {
   idNumber: string;
-  name: string;
-  surname: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  cellNumber: string;
+  contactNumber: string;
+  occupation?: OccupationType;
+  employer?: string;
 }
 
 export type DocumentType =
   | 'ID_DOCUMENT'
   | 'PASSPORT'
   | 'PROOF_OF_EMPLOYMENT'
+  | 'PAYSLIP'
   | 'BANK_STATEMENTS'
+  | 'BANK_STATEMENTS_6MONTHS'
   | 'PROOF_OF_BANK_ACCOUNT';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -84,7 +90,6 @@ export interface VettingRequestDetails {
   landlordEmail: string;
   tenantIdNumber: string;
   createdAt: string;
-  // Add other fields as needed
 }
 
 export async function getVettingRequestByReference(

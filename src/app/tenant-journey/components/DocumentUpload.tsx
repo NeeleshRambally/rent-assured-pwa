@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { createTenant, uploadDocument, submitVettingRequest, DocumentType } from '@/lib/api';
+import { useState, useMemo } from 'react';
+import { createTenant, uploadDocument, submitVettingRequest, DocumentType, OccupationType } from '@/lib/api';
 
 interface DocumentUploadProps {
   tenantData: any;
@@ -26,18 +26,49 @@ interface UploadedDocument {
   preview?: string;
 }
 
+interface DocTypeOption {
+  value: DocumentType;
+  label: string;
+}
+
+function getDocumentTypes(occupation: OccupationType | undefined): DocTypeOption[] {
+  const common: DocTypeOption[] = [
+    { value: 'ID_DOCUMENT', label: 'ID Document' },
+    { value: 'PASSPORT', label: 'Passport' },
+    { value: 'PROOF_OF_BANK_ACCOUNT', label: 'Proof of Bank Account' },
+  ];
+
+  if (occupation === 'SelfEmployed') {
+    return [
+      ...common,
+      { value: 'BANK_STATEMENTS_6MONTHS', label: 'Bank Statements (Last 6 months)' },
+      { value: 'PROOF_OF_EMPLOYMENT', label: 'Business Registration / Proof of Business' },
+    ];
+  }
+
+  if (occupation === 'Unemployed') {
+    return [
+      ...common,
+      { value: 'BANK_STATEMENTS', label: 'Bank Statements (Last 3 months)' },
+    ];
+  }
+
+  // Employed (default)
+  return [
+    ...common,
+    { value: 'BANK_STATEMENTS', label: 'Bank Statements (Last 3 months)' },
+    { value: 'PAYSLIP', label: 'Payslip (Latest)' },
+    { value: 'PROOF_OF_EMPLOYMENT', label: 'Proof of Employment / Employment Letter' },
+  ];
+}
+
 export default function DocumentUpload({ tenantData, onBack, vettingRef }: DocumentUploadProps) {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const documentTypes = [
-    { value: 'ID_DOCUMENT', label: 'ID Document' },
-    { value: 'PASSPORT', label: 'Passport' },
-    { value: 'PROOF_OF_EMPLOYMENT', label: 'Proof of Employment' },
-    { value: 'BANK_STATEMENTS', label: 'Bank Statements (Last 3 months)' },
-    { value: 'PROOF_OF_BANK_ACCOUNT', label: 'Proof of Bank Account' },
-  ];
+  const occupation = tenantData?.occupation as OccupationType | undefined;
+  const documentTypes = useMemo(() => getDocumentTypes(occupation), [occupation]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
     const files = e.target.files;
@@ -91,13 +122,15 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
     setUploading(true);
 
     try {
-      // Step 1: Create/update tenant
+      // Step 1: Create/update tenant with correct field names
       await createTenant({
         idNumber: tenantData.idNumber,
-        name: tenantData.name,
-        surname: tenantData.surname,
+        firstName: tenantData.firstName,
+        lastName: tenantData.lastName,
         email: tenantData.email,
-        cellNumber: tenantData.cellNumber,
+        contactNumber: tenantData.contactNumber,
+        occupation: tenantData.occupation || undefined,
+        employer: tenantData.employer || undefined,
       });
 
       // Step 2: Upload all documents

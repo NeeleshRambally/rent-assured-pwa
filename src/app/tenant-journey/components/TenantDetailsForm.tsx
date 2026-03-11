@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OccupationType } from '@/lib/api';
 
 interface TenantDetailsFormProps {
   onComplete: (data: any) => void;
@@ -22,35 +23,40 @@ function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
 export default function TenantDetailsForm({ onComplete, initialData, tenantId, vettingRef }: TenantDetailsFormProps) {
   const [formData, setFormData] = useState({
     idNumber: tenantId || initialData?.idNumber || '',
-    name: initialData?.name || '',
-    surname: initialData?.surname || '',
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
     email: initialData?.email || '',
-    cellNumber: initialData?.cellNumber || '',
+    contactNumber: initialData?.contactNumber || '',
+    occupation: (initialData?.occupation as OccupationType) || '' as OccupationType | '',
+    employer: initialData?.employer || '',
   });
 
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.idNumber.trim()) newErrors.idNumber = 'ID Number is required';
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.surname.trim()) newErrors.surname = 'Surname is required';
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    if (!formData.cellNumber.trim()) newErrors.cellNumber = 'Cell number is required';
+    if (!formData.contactNumber.trim()) newErrors.contactNumber = 'Cell number is required';
+    if (!formData.occupation) newErrors.occupation = 'Please select your employment status';
+    if (formData.occupation === 'Employed' && !formData.employer.trim()) {
+      newErrors.employer = 'Employer name is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -59,7 +65,20 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onComplete(formData);
+      const submitData: any = {
+        idNumber: formData.idNumber,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        contactNumber: formData.contactNumber,
+        occupation: formData.occupation,
+      };
+
+      if (formData.occupation === 'Employed' && formData.employer.trim()) {
+        submitData.employer = formData.employer.trim();
+      }
+
+      onComplete(submitData);
     }
   };
 
@@ -93,37 +112,37 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Name *
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                    errors.firstName ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
               </div>
 
               <div>
-                <label htmlFor="surname" className="block text-sm font-medium text-gray-700 mb-1">
-                  Surname *
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
                 </label>
                 <input
                   type="text"
-                  id="surname"
-                  name="surname"
-                  value={formData.surname}
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.surname ? 'border-red-500' : 'border-gray-300'
+                    errors.lastName ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.surname && <p className="text-red-500 text-xs mt-1">{errors.surname}</p>}
+                {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
               </div>
             </div>
           </div>
@@ -152,21 +171,87 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
             </div>
 
             <div>
-              <label htmlFor="cellNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">
                 Cell Number *
               </label>
               <input
                 type="tel"
-                id="cellNumber"
-                name="cellNumber"
-                value={formData.cellNumber}
+                id="contactNumber"
+                name="contactNumber"
+                value={formData.contactNumber}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.cellNumber ? 'border-red-500' : 'border-gray-300'
+                  errors.contactNumber ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              {errors.cellNumber && <p className="text-red-500 text-xs mt-1">{errors.cellNumber}</p>}
+              {errors.contactNumber && <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>}
             </div>
+          </div>
+        </div>
+
+        {/* Employment Information */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Employment Information</h2>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="occupation" className="block text-sm font-medium text-gray-700 mb-1">
+                Employment Status *
+              </label>
+              <select
+                id="occupation"
+                name="occupation"
+                value={formData.occupation}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${
+                  errors.occupation ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select your employment status</option>
+                <option value="Employed">Employed</option>
+                <option value="SelfEmployed">Self-Employed</option>
+                <option value="Unemployed">Unemployed</option>
+              </select>
+              {errors.occupation && <p className="text-red-500 text-xs mt-1">{errors.occupation}</p>}
+            </div>
+
+            {formData.occupation === 'Employed' && (
+              <div>
+                <label htmlFor="employer" className="block text-sm font-medium text-gray-700 mb-1">
+                  Employer Name *
+                </label>
+                <input
+                  type="text"
+                  id="employer"
+                  name="employer"
+                  value={formData.employer}
+                  onChange={handleChange}
+                  placeholder="e.g. Acme Corporation"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.employer ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.employer && <p className="text-red-500 text-xs mt-1">{errors.employer}</p>}
+              </div>
+            )}
+
+            {formData.occupation === 'SelfEmployed' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800">
+                  As a self-employed applicant, please ensure you upload <strong>6 months</strong> of bank statements
+                  in the next step.
+                </p>
+              </div>
+            )}
+
+            {formData.occupation === 'Unemployed' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Please upload your bank statements showing any income sources (e.g. grants, support payments, savings)
+                  in the next step.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
