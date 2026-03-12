@@ -1,4 +1,5 @@
 export type OccupationType = 'Employed' | 'SelfEmployed' | 'Unemployed';
+export type IdType = 'sa_id' | 'passport';
 
 export interface TenantDto {
   idNumber: string;
@@ -9,6 +10,7 @@ export interface TenantDto {
   dateOfBirth?: string;
   occupation?: OccupationType;
   employer?: string;
+  idType?: IdType;
 }
 
 export type DocumentType =
@@ -63,16 +65,23 @@ export async function uploadDocument(
   return response.json();
 }
 
+export interface VettingConsentPayload {
+  consentGranted: boolean;
+  consentVersion: string;
+}
+
 export async function submitVettingRequest(
-  vettingRef: string
+  vettingRef: string,
+  consent: VettingConsentPayload
 ) {
   const response = await fetch(
     `${API_BASE_URL}/vetting/reference/${encodeURIComponent(vettingRef)}/submit`,
     {
       method: 'POST',
       headers: {
-        'accept': '*/*',
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(consent),
     }
   );
 

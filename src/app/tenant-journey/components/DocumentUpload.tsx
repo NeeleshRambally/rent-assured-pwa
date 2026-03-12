@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { createTenant, uploadDocument, submitVettingRequest, DocumentType, OccupationType } from '@/lib/api';
+import { createTenant, uploadDocument, submitVettingRequest, DocumentType, OccupationType, IdType } from '@/lib/api';
 
 interface DocumentUploadProps {
   tenantData: any;
@@ -31,10 +31,14 @@ interface DocTypeOption {
   label: string;
 }
 
-function getDocumentTypes(occupation: OccupationType | undefined): DocTypeOption[] {
+function getDocumentTypes(occupation: OccupationType | undefined, idType: IdType | undefined): DocTypeOption[] {
+  // Show only the relevant ID document type based on what the tenant selected
+  const idDoc: DocTypeOption = idType === 'passport'
+    ? { value: 'PASSPORT', label: 'Passport' }
+    : { value: 'ID_DOCUMENT', label: 'ID Document' };
+
   const common: DocTypeOption[] = [
-    { value: 'ID_DOCUMENT', label: 'ID Document' },
-    { value: 'PASSPORT', label: 'Passport' },
+    idDoc,
     { value: 'PROOF_OF_BANK_ACCOUNT', label: 'Proof of Bank Account' },
   ];
 
@@ -66,9 +70,12 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [consentGranted, setConsentGranted] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
 
   const occupation = tenantData?.occupation as OccupationType | undefined;
-  const documentTypes = useMemo(() => getDocumentTypes(occupation), [occupation]);
+  const idType = tenantData?.idType as IdType | undefined;
+  const documentTypes = useMemo(() => getDocumentTypes(occupation, idType), [occupation, idType]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
     const files = e.target.files;
@@ -119,6 +126,11 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
       return;
     }
 
+    if (!consentGranted) {
+      alert('You must agree to the consent terms before submitting.');
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -131,6 +143,7 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
         contactNumber: tenantData.contactNumber,
         occupation: tenantData.occupation || undefined,
         employer: tenantData.employer || undefined,
+        idType: tenantData.idType || 'sa_id',
       });
 
       // Step 2: Upload all documents
@@ -140,10 +153,13 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
 
       await Promise.all(uploadPromises);
 
-      // Step 3: Submit vetting request (marks as completed)
+      // Step 3: Submit vetting request with consent (marks as completed)
       if (vettingRef) {
         try {
-          await submitVettingRequest(vettingRef);
+          await submitVettingRequest(vettingRef, {
+            consentGranted: true,
+            consentVersion: '1.0',
+          });
         } catch (statusError) {
           console.error('Failed to submit vetting request:', statusError);
           // Don't fail the whole submission if status update fails
@@ -306,6 +322,35 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
           </div>
         ))}
 
+        {/* Consent */}
+        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="consent"
+              checked={consentGranted}
+              onChange={(e) => setConsentGranted(e.target.checked)}
+              className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="consent" className="text-sm text-gray-700 flex-1">
+              I consent to RentAssured processing my personal information, including identity verification, credit checks, criminal record checks, and document analysis for the purpose of tenant screening.
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(true)}
+                className="inline-flex items-center ml-1 text-blue-600 hover:text-blue-800 font-medium"
+              >
+                <svg className="w-4 h-4 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                View full terms
+              </button>
+            </label>
+          </div>
+          {!consentGranted && documents.length > 0 && (
+            <p className="text-amber-600 text-xs mt-2 ml-7">You must agree to the consent terms to submit your application.</p>
+          )}
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
@@ -317,7 +362,7 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
           </button>
           <button
             type="submit"
-            disabled={uploading || documents.length === 0}
+            disabled={uploading || documents.length === 0 || !consentGranted}
             className="sm:flex-1 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? 'Submitting...' : 'Submit Application'}
@@ -332,6 +377,110 @@ export default function DocumentUpload({ tenantData, onBack, vettingRef }: Docum
         )}
       </form>
       </div>
+
+      {/* Consent Terms Modal */}
+      {showConsentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+              <h2 className="text-lg font-bold text-gray-900">Consent Terms & Conditions</h2>
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 text-sm text-gray-700 leading-relaxed">
+              <p className="font-semibold text-gray-900">
+                By submitting your application, you consent to the following:
+              </p>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">1. Identity Verification</h3>
+                <p>
+                  Your identity documents (SA ID or Passport) will be verified through third-party
+                  identity verification services to confirm your identity and detect potential fraud.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">2. Credit Check</h3>
+                <p>
+                  A consumer credit report will be obtained from a registered credit bureau to assess
+                  your creditworthiness. This is a soft enquiry and will not affect your credit score.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">3. Criminal Record Check</h3>
+                <p>
+                  A criminal record check will be performed using your identity information to assess
+                  any background risks.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">4. Employment Confirmation</h3>
+                <p>
+                  If applicable, your employment status may be verified with your employer to confirm
+                  your income and employment details.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">5. Document Analysis</h3>
+                <p>
+                  Your uploaded documents (bank statements, payslips, employment letters) will be
+                  analysed using AI-powered tools to extract financial information for the purpose
+                  of affordability assessment.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">6. Data Protection (POPIA)</h3>
+                <p>
+                  Your personal information will be processed in accordance with the Protection of
+                  Personal Information Act (POPIA). Your data will only be used for the purpose of
+                  tenant screening and will not be shared with third parties except as necessary to
+                  complete the verification process. You may request access to, correction of, or
+                  deletion of your personal information at any time.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-1">7. Data Retention</h3>
+                <p>
+                  Verification results are retained for up to 3 months and may be reused if another
+                  landlord requests a screening during that period, without requiring a new
+                  verification. You will be asked to consent again for each new screening request.
+                </p>
+              </div>
+
+              <p className="text-xs text-gray-500 pt-2">
+                Consent Version 1.0 — Last updated March 2026
+              </p>
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setConsentGranted(true);
+                  setShowConsentModal(false);
+                }}
+                className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+              >
+                I Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

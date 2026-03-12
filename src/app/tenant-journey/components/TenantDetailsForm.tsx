@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { OccupationType } from '@/lib/api';
+import { OccupationType, IdType } from '@/lib/api';
 
 interface TenantDetailsFormProps {
   onComplete: (data: any) => void;
@@ -22,6 +22,7 @@ function VettingRefBanner({ vettingRef }: { vettingRef?: string | null }) {
 
 export default function TenantDetailsForm({ onComplete, initialData, tenantId, vettingRef }: TenantDetailsFormProps) {
   const [formData, setFormData] = useState({
+    idType: (initialData?.idType as IdType) || 'sa_id' as IdType,
     idNumber: tenantId || initialData?.idNumber || '',
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',
@@ -56,8 +57,17 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
 
-    // Auto-fill date of birth from SA ID number
-    if (name === 'idNumber') {
+    // When switching ID type, clear DOB auto-fill
+    if (name === 'idType') {
+      setDobAutoFilled(false);
+      // If switching to passport, clear the auto-filled DOB so user enters it manually
+      if (value === 'passport' && dobAutoFilled) {
+        setFormData(prev => ({ ...prev, [name]: value, dateOfBirth: '' }));
+      }
+    }
+
+    // Auto-fill date of birth from SA ID number (only if using SA ID)
+    if (name === 'idNumber' && formData.idType === 'sa_id') {
       const dob = extractDobFromSaId(value);
       if (dob) {
         setFormData(prev => ({ ...prev, [name]: value, dateOfBirth: dob }));
@@ -99,6 +109,7 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
     e.preventDefault();
     if (validate()) {
       const submitData: any = {
+        idType: formData.idType,
         idNumber: formData.idNumber,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -128,8 +139,24 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
 
           <div className="space-y-4">
             <div>
+              <label htmlFor="idType" className="block text-sm font-medium text-gray-700 mb-1">
+                Identification Type *
+              </label>
+              <select
+                id="idType"
+                name="idType"
+                value={formData.idType}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white border-gray-300"
+              >
+                <option value="sa_id">South African ID</option>
+                <option value="passport">Passport</option>
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                ID Number *
+                {formData.idType === 'passport' ? 'Passport Number' : 'ID Number'} *
               </label>
               <input
                 type="text"
@@ -137,6 +164,7 @@ export default function TenantDetailsForm({ onComplete, initialData, tenantId, v
                 name="idNumber"
                 value={formData.idNumber}
                 onChange={handleChange}
+                placeholder={formData.idType === 'passport' ? 'Enter your passport number' : 'Enter your 13-digit SA ID number'}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.idNumber ? 'border-red-500' : 'border-gray-300'
                 }`}
