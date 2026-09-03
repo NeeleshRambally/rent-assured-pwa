@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.idea
+.DS_Store
+.env*
+!.env.local.example
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+Dockerfile
+.dockerignore
+railway.json
+DEPLOYMENT.md
+README.md
